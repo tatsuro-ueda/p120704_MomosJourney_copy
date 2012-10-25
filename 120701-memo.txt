@@ -1,0 +1,224 @@
+パズルの仕様
+
+◆Tile
+見えないUIView。
+ウィンドウのすぐ上にある。
+123
+456
+789
+x方向は剰余、y方向は割る
+プロパティとして現在保有しているPieceを持つ
+@propaty Piece* holdingPiece
+プロパティとして正しいPieceを持つ
+@propaty Piece* correctPiece
+
+◆ピース
+Piece
+
+プロパティ
+
+@propaty Tile* beforeTile
+
+メソッド
+
+- initWithImage isTouchable:(BOOL)isTouchable
+タッチ可能にしておく
+... = YES
+
+- touchesBegan
+タッチ開始時に移動元タイルをセットする
+[self.superview tileTouchBegan:(*Touch) touch]
+for(i)
+  if(tile[i].holdingPiece == self)
+    self.beforeTile = タイル
+
+- touchesMoved
+ピース移動中(タッチムーブ)、下のピースは半透明になる。
+ピース移動中の指先はpoint
+すべてのピースを非透明にしてから上の処理を実行する（このメソッドはデリゲートが持つ）
+[self.superview setAllTilesNotTransparent]
+bellowTile = [self.superview tileContainsPoint: point]
+bellowTile.holdingPiece.alpha = 0.5
+
+- touchesEnded
+タッチエンドで下のピースと入れ替わる。入れ替わったピースは動かしたピースの元の場所に移動する。
+タッチエンドでは下のピースに自分がもといたタイルを含むメッセージを送る
+このメソッドもタイル全体を扱うのでデリゲートが持つべき
+belowTile = [self.superview tileContainsPoint:point]
+bellowPiece = belowTile.holdingPiece
+[self moveToTile:bellowTile]
+[belowPiece moveToTile:beforeTile]
+if [self.superview allPiecesAreCorrect]
+  [self.superview displayFinishEffect]
+
+- (void)moveToTile:(Tile*)tile
+tile.holdingPiece = self
+self.frame = tile.frame
+
+// 正しい位置にピースを置くと白くフラッシュする
+if tile.correctPiece = self
+  白くフラッシュ
+end
+
+◆デリゲート
+
+NSMutableArray* _allPieces
+NSMutableArray* _allTiles
+
+pointを受けとってタイルを返す関数
+- (Tile*) tileContainsPoint: (CGPoint*)point
+for(i)
+  if(CGRectContainsPoint(tile[i].frame, point)
+    return tile[i]
+
+正解するとゆっくりと透明になるので白くなる。
+とりあえず半透明にする
+- (void) displayFinishEffect
+for(タイル){
+  タイル.alpha = 0.5;
+}
+
+移動が終わるたびにデリゲートが正解かチェックする
+- (BOOL) allPiecesAreCorrect
+for(タイル){
+  if(タイル.holdingPiece != タイル.correctPiece){
+    return NO
+  }
+return YES
+}
+
+メソッド
+- (void)setAllTilesNotTransparent
+for (タイル）
+  タイル.alpha = 1.0
+
+初期化：
+21
+43
+65
+for(i)
+  // pieceを初期化する
+  NSString* filename = [NSString stringWithFormat:@"piece%d.jpg", i]
+  piece = [[Piece alloc] 
+  initWithImage:[UIImage imageWithName:filename]
+  isTouchable:YES]
+  
+  // tileを初期化する
+  tile = [[Tile alloc] 
+  initWithFrame:CGRectMake((i % 2) * 160, (i / 2) * 160, 160, 160)
+  withCorrectPiece: piece]
+  
+  [allPieces addObject:piece]
+  [allTiles addObject:tile]
+  [tile[i] addSubview:self]
+for(i)
+  do {
+    int r = arc4random() % 6
+  }
+  while (tile[r].holdingPiece == nil)
+  [piece[i] moveToTile:tile[r]]
+  [piece[i] addSubview:self]
+
+パズルの仕様
+
+上の隅からスタート
+隣接したマスに進める
+パズルを解くとちょっとした解説を見ることができる
+
+空をどうするか？
+正解ピースを初めから埋め込み、動けなくする。
+4x6を一度つくってみたい。
+
+パズル画面で長押しでメニュー。ストーリーボードでやってみる。
+
+アニメーション中はタッチ無効
+正しい位置にはまると効果音+視覚効果。動かせなくなる。白くフラッシュする。もしくはバネで引き戻される。
+
+広告を入れる。下の方をやっている時は上の方に、表示される。広告除去が有料。
+
+まずは望用を作り込む。焦らない。今年のうちに出せれば良い。
+まずは1枚だけ。キュアハッピー。
+
+背景にメッセージを書いておき、パズルを解くとピースが移動して読める。
+
+iPad版。15x18のような大きいパズル。
+
+量産できなくする。ももさんの味を出す。
+
+テストフライト。河内、西崎、速水、なりおか、内海、星出。倉林、三星、堀内。小野、上原。テストフライトは子ども対象と大人対象を分ける。
+
+バネを効かせる。引っ張った長さに比例して引っ張り始めた点(原点)に寄せる。原点からの距離を1/5(ピースが多くなればもっと小さく)だけ縮める。もっと過激でもいいかも。1/2とか。行き先をポイントする感じ。バネがあることで、ピースが遠いと速い理由付けになる。piece.layer.position = CGPoint(startPoint.x + 距離(,)
+
+引っ張ると震える。どうだろう？実装の仕方がわからない。
+
+指で弾くと慣性で飛んでいく。どこかのマスに進入すると取り込まれる。タッチムーブで座標を記録し、タッチエンドで差分ベクトルを何倍かした場所のタイルを取得しmoveToTileする。移動先タイルが移動元タイルの場合は入れ替えなしでmoveToTileする。
+
+4面構成。上から下へ4つ並べる。最初は1面だけ遊べる。
+
+何回でも遊べると説明に書いておく。もしくは説明もももワールドにしてしまう。
+
+デザインも外注する。
+
+マルチタッチ。難しそう。
+
+どういう順番で実装するか？どういうポリシーで実装するか？
+
+気をつけることは2x3でなくても動くようにすること。いろいろ作ってみないとわからないこともあるだろう。3x4だとどうか、4x6だとどうか。マスが多い場合のテストはどうするか。
+
+はや解きタイムアタック。テストフライトで反応をみる。タイムアタックありの面となしの面を作って、テスターにどっちが良いか聞く。
+
+バネの引き戻しの長短。テストフライトで反応をみる。最初のテストフライト。2ヶ月後ぐらい目標か？
+
+早めに3x4、4x6も作った方がいいかもしれない。後でなおすより良い。となると面選択が必要。めんどくさいなー。セグエで作ってしまうか？
+
+画像を切り分けるツールも作る。ルビーで。これが最初かな。左上を0番とし、右へ番号が増えていく。右端まで行くと次の列の左端に移る。
+
+動かないピースを動かそうとすると上に半透明の赤いビューを表示。当然透明度はアニメーション。二回でもいい。赤でなくて普通に透明度を変えるのと比べる。
+
+細かい演出は先に盛り込んだ方がいいかも。早々何回もテストしてくれるわけでもないだろう。
+
+ピースを動かす時に直下のタイルが半透明になるのもアニメーション。だんだん半透明になってだんだん非透明に戻る。
+
+BGM。河内か。
+
+テストフライト用にメールを書くボタンを付ける。
+
+質問
+面1 面2
+メールボタン「感想を送る」
+
+長くプレイするとアプリ評価を促す。
+
+音。はまった音。正解の音。クリアの音。最初にピースが広がる音。ピースが滑っていく音。動かせないピースを動かそうとした時の音。
+
+まんぜんとテストフライトしない。何を聞きたいか明確にする。
+
+7月の間は基本的に進めない。最初のテストフライトはお盆前。
+
+フローチャートを書いてから実装する。プレスの処理などはこの段階で整理しておく。
+
+ピースの番号を図柄と合わせる
+
+動かせないピースの移動距離は引っ張りの1/5。指直下のピースの透明度は変化しない。
+
+影をつける。背景がある場合は必要。
+
+タッチ開始
+正解ピースか判定
+correctPieceIsMoving=YES
+
+面セレクトを実装しないとテストフライトできない。
+
+音
+ピースが指に吸い付く音
+ピースがタイルにハマる音
+ピースが正解タイルにハマる音
+ピースが飛んで行く音
+動かせないピースを動かそうとしたときの音
+
+マルチタッチをオフに
+タッチキャンセルを書く
+
+タッチ開始の微小移動のdurationを半分に。
+
+タッチ移動中の直下タイルの透明度をもっと透明にする。0.5くらいか？
